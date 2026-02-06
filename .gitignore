@@ -40,3 +40,25 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+venv/
+
+# ML / AI models
+*.h5
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.onnx
+models/
+checkpoints/
+
+# Data
+*.csv
+*.zip
+*.tar
+*.tar.gz
