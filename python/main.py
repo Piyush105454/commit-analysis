@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Any, Dict
@@ -44,8 +44,23 @@ VECTORIZER = None
 MODEL = None
 LABEL_ENCODER = None
 
+# Optional imports for local ML
+try:
+    import sklearn
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.ensemble import RandomForestClassifier
+    # We don't import them to use them directly here, but just to check availability
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
+    print("WARNING: scikit-learn not found. Local video analysis will be disabled.")
+
 def load_models():
     global VECTORIZER, MODEL, LABEL_ENCODER
+    
+    if not SKLEARN_AVAILABLE:
+        return
+
     try:
         vec_path = os.path.join(MODEL_DIR, "tfidf_vectorizer.pkl")
         model_path = os.path.join(MODEL_DIR, "Random Forest.pkl")
@@ -67,7 +82,11 @@ load_models()
 
 @router.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "ml_available": SKLEARN_AVAILABLE,
+        "youtube_api": bool(YOUTUBE_API_KEY)
+    }
 
 @router.get("/youtube")
 def youtube_data(url: str = Query(..., description="YouTube video URL")):
@@ -128,6 +147,9 @@ def predict_comments(comments: List[str]) -> Dict[str, Any]:
     Use loaded vectorizer/model/label encoder to predict sentiment for comments.
     Returns structure with per-comment sentiment + confidence and summary.
     """
+    if not SKLEARN_AVAILABLE:
+        raise RuntimeError("Local ML models are not available in this environment (scikit-learn missing)")
+
     if VECTORIZER is None or MODEL is None:
         raise RuntimeError("Models not loaded on server")
 
@@ -192,6 +214,9 @@ def analyze_comments_batch(payload: BatchCommentsRequest):
         out = predict_comments(payload.comments)
         return out
     except RuntimeError as e:
+        # Graceful degradation: return error but don't crash 500 if known issue
+        if "scikit-learn missing" in str(e):
+            raise HTTPException(status_code=503, detail="Local analysis unavailable in cloud deployment")
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -304,9 +329,14 @@ def analyze_video(payload: AnalyzeVideoRequest):
                 "model_used": analysis_out["model"],
             }
         except RuntimeError as e:
+            if "scikit-learn missing" in str(e):
+                msg = "Local analysis disabled (cloud mode)" 
+            else:
+                msg = f"Model error: {str(e)}"
+            
             result["comments_analysis"] = {
                 "analyzed": 0,
-                "summary": f"Model not available on server: {str(e)}. You can POST comments to /analyze/comments/batch to analyze using a remote model service.",
+                "summary": msg
             }
 
     return result
