@@ -52,6 +52,21 @@ export const youtubeAPI = {
   analyzeText: pythonYouTubeAPI.analyzeText
 };
 
+// Commit Analysis API client
+export const commitAPI = {
+  analyzeCommit: async (message: string) => {
+    return pythonYouTubeAPI.analyzeCommit(message);
+  },
+
+  analyzeCommitsBatch: async (commits: string[]) => {
+    return pythonYouTubeAPI.analyzeCommitsBatch(commits);
+  },
+
+  analyzeSentiment: async (text: string) => {
+    return pythonYouTubeAPI.analyzeSentiment(text);
+  },
+};
+
 // Auth API client
 export const authAPI = {
   login: async (email: string, password: string) => {
@@ -114,5 +129,6 @@ export const authAPI = {
 // Export default API object
 export default {
   youtube: youtubeAPI,
-  auth: authAPI
+  auth: authAPI,
+  commit: commitAPI
 };

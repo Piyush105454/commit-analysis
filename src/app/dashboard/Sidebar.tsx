@@ -51,11 +51,13 @@ export default function Sidebar({ isOpen, onClose, onCollapseChange }: SidebarPr
   const menuItems: MenuItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', href: '/dashboard', badge: null, description: 'Overview & insights' },
     { id: 'analytics-dashboard', label: 'Complete Analytics', icon: '🚀', href: '/analytics-dashboard', badge: 'Pro', description: 'Full AI-powered dashboard' },
-    { id: 'content', label: 'Content Manager', icon: '📝', href: '/content', badge: null, description: 'Create & schedule' },
-    { id: 'audience', label: 'Audience Insights', icon: '👥', href: '/audience', badge: null, description: 'Know your followers' },
-    { id: 'competitors', label: 'Competitors', icon: '🔍', href: '/competitors', badge: 'Pro', description: 'Track competition' },
-    { id: 'reports', label: 'Reports', icon: '📋', href: '/reports', badge: null, description: 'Export & share' },
-    { id: 'accounts', label: 'Social Accounts', icon: '🔗', href: '/accounts', badge: '4', description: 'Connected platforms' },
+    { id: 'channel-commits', label: 'Channel Commits', icon: '🎬', href: '/channel-commits', badge: 'New', description: 'Analyze video commits' },
+    { id: 'commits', label: 'Commit Analyzer', icon: '📝', href: '/commits', badge: 'New', description: 'AI commit analysis' },
+    // { id: 'content', label: 'Content Manager', icon: '📝', href: '/content', badge: null, description: 'Create & schedule' },
+    // { id: 'audience', label: 'Audience Insights', icon: '👥', href: '/audience', badge: null, description: 'Know your followers' },
+    // { id: 'competitors', label: 'Competitors', icon: '🔍', href: '/competitors', badge: 'Pro', description: 'Track competition' },
+    // { id: 'reports', label: 'Reports', icon: '📋', href: '/reports', badge: null, description: 'Export & share' },
+    // { id: 'accounts', label: 'Social Accounts', icon: '🔗', href: '/accounts', badge: '4', description: 'Connected platforms' },
     { id: 'settings', label: 'Settings', icon: '⚙️', href: '/settings', badge: null, description: 'Preferences & billing' },
   ]
 

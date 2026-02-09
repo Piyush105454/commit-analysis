@@ -4,20 +4,37 @@ from pydantic import BaseModel
 from typing import List, Optional, Any, Dict
 from yt_dlp import YoutubeDL
 import os
+import sys
 import pickle
+from dotenv import load_dotenv
+
+# Load environment variables FIRST before any imports that need them
+# Explicitly load from python/.env
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(dotenv_path=env_path)
+
+# Add current directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from hf_models import analyze_commit, batch_analyze_commits, analyze_sentiment
+except ImportError:
+    # Fallback: try importing from current package
+    from .hf_models import analyze_commit, batch_analyze_commits, analyze_sentiment
+from googleapiclient.discovery import build
+
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 app = FastAPI()
 
-# Allow your frontend (Next.js) to access the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- Load ML artifacts if available ---
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 VECTORIZER = None
 MODEL = None
@@ -40,7 +57,6 @@ def load_models():
             with open(le_path, "rb") as f:
                 LABEL_ENCODER = pickle.load(f)
     except Exception as e:
-        # keep failures silent; endpoints will report missing models
         print("Model load error:", e)
 
 load_models()
@@ -88,6 +104,19 @@ class TextRequest(BaseModel):
 
 class BatchCommentsRequest(BaseModel):
     comments: List[str]
+
+
+class CommitAnalysisRequest(BaseModel):
+    message: str
+
+
+class BatchCommitsRequest(BaseModel):
+    commits: List[str]
+
+
+class ChannelRequest(BaseModel):
+    channel_url: str
+    max_videos: Optional[int] = 50
 
 
 def predict_comments(comments: List[str]) -> Dict[str, Any]:
@@ -153,7 +182,6 @@ def predict_comments(comments: List[str]) -> Dict[str, Any]:
 
 @app.post("/analyze/comments/batch")
 def analyze_comments_batch(payload: BatchCommentsRequest):
-    # Real model-based analysis for a batch of comments
     try:
         if not payload.comments:
             return {"count": 0, "results": []}
@@ -163,6 +191,58 @@ def analyze_comments_batch(payload: BatchCommentsRequest):
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/analyze/commit")
+def analyze_single_commit(payload: CommitAnalysisRequest):
+    try:
+        result = analyze_commit(payload.message)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Commit analysis failed: {str(e)}")
+
+
+@app.post("/analyze/commits/batch")
+def analyze_commits_batch(payload: BatchCommitsRequest):
+    try:
+        if not payload.commits:
+            return {"count": 0, "results": []}
+        
+        results = batch_analyze_commits(payload.commits)
+        
+        sentiments = [r["sentiment"]["label"] for r in results if "label" in r["sentiment"]]
+        types = [r["type"]["type"] for r in results]
+        quality_scores = [r["quality_score"] for r in results]
+        
+        sentiment_dist = {}
+        for s in sentiments:
+            sentiment_dist[s] = sentiment_dist.get(s, 0) + 1
+        
+        type_dist = {}
+        for t in types:
+            type_dist[t] = type_dist.get(t, 0) + 1
+        
+        return {
+            "count": len(results),
+            "results": results,
+            "statistics": {
+                "sentiment_distribution": sentiment_dist,
+                "type_distribution": type_dist,
+                "average_quality_score": sum(quality_scores) / len(quality_scores) if quality_scores else 0,
+                "total_commits": len(results)
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
+
+
+@app.post("/analyze/sentiment")
+def analyze_text_sentiment(payload: TextRequest):
+    try:
+        result = analyze_sentiment(payload.text)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {str(e)}")
 
 
 @app.post("/analyze/video")
@@ -228,29 +308,130 @@ def analyze_video(payload: AnalyzeVideoRequest):
     return result
 
 
-@app.post("/analyze/text")
-def analyze_text(payload: TextRequest):
-    # Simple heuristic stub for sentiment
-    text = (payload.text or "").lower()
-    sentiment = "neutral"
-    if any(w in text for w in ["good", "great", "awesome", "love"]):
-        sentiment = "positive"
-    elif any(w in text for w in ["bad", "terrible", "hate", "awful"]):
-        sentiment = "negative"
-    return {"text": payload.text, "sentiment": sentiment}
+@app.post("/analyze/sentiment")
+def analyze_text_sentiment(payload: TextRequest):
+    try:
+        result = analyze_sentiment(payload.text)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {str(e)}")
 
 
-@app.post("/analyze/channel")
-def analyze_channel(payload: AnalyzeVideoRequest):
-    # Stub: Return basic echo info. Full channel crawling requires YouTube Data API or scraping.
-    return {
-        "channel_name": payload.video_url,
-        "max_videos": payload.max_comments,
-        "summary": "Channel analysis endpoint is a stub. Integrate YouTube Data API for full data."
-    }
-
-
-@app.get("/search/channels")
-def search_channels(q: str = Query(...), max_results: int = Query(10)):
-    # Stubbed response. For real search integrate YouTube Data API.
-    return {"query": q, "max_results": max_results, "channels": []}
+@app.post("/youtube/channel")
+def fetch_channel_videos(payload: ChannelRequest):
+    """Fetch REAL videos from YouTube channel using YouTube Data API"""
+    try:
+        if not YOUTUBE_API_KEY or YOUTUBE_API_KEY == "your_youtube_api_key_here":
+            raise HTTPException(status_code=400, detail="YouTube API key not configured. Get one from https://console.cloud.google.com/ and enable YouTube Data API v3")
+        
+        channel_url = payload.channel_url
+        max_videos = payload.max_videos or 10
+        
+        # Extract channel ID from URL
+        channel_id = None
+        if '/@' in channel_url:
+            channel_handle = channel_url.split('/@')[1].split('?')[0]
+            print(f"DEBUG: Looking up channel handle: {channel_handle}")
+            try:
+                # Need to look up channel ID from handle
+                youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+                request = youtube.search().list(
+                    part='snippet',
+                    q=channel_handle,
+                    type='channel',
+                    maxResults=1
+                )
+                response = request.execute()
+                print(f"DEBUG: Search response: {response}")
+                if response.get('items'):
+                    channel_id = response['items'][0]['id']['channelId']
+                    print(f"DEBUG: Found channel ID: {channel_id}")
+            except Exception as e:
+                print(f"DEBUG: Error during channel lookup: {str(e)}")
+                raise HTTPException(status_code=400, detail=f"Failed to find channel: {str(e)}")
+        elif '/channel/' in channel_url:
+            channel_id = channel_url.split('/channel/')[1].split('?')[0]
+            print(f"DEBUG: Extracted channel ID from URL: {channel_id}")
+        
+        if not channel_id:
+            raise HTTPException(status_code=400, detail="Could not extract channel ID from URL. Use format: https://www.youtube.com/@channelname or https://www.youtube.com/channel/UCXXXXXX")
+        
+        print(f"DEBUG: Fetching videos for channel: {channel_id}")
+        
+        # Get channel videos
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        
+        # Get uploads playlist ID
+        request = youtube.channels().list(
+            part='contentDetails',
+            id=channel_id
+        )
+        response = request.execute()
+        print(f"DEBUG: Channels response: {response}")
+        
+        if not response.get('items'):
+            raise HTTPException(status_code=400, detail="Channel not found or API key doesn't have access")
+        
+        uploads_playlist_id = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+        print(f"DEBUG: Uploads playlist ID: {uploads_playlist_id}")
+        
+        # Get videos from uploads playlist
+        videos = []
+        request = youtube.playlistItems().list(
+            part='snippet',
+            playlistId=uploads_playlist_id,
+            maxResults=min(max_videos, 50)
+        )
+        
+        while request and len(videos) < max_videos:
+            response = request.execute()
+            print(f"DEBUG: Playlist items response count: {len(response.get('items', []))}")
+            
+            for item in response.get('items', []):
+                if len(videos) >= max_videos:
+                    break
+                
+                snippet = item['snippet']
+                video_id = snippet['resourceId']['videoId']
+                
+                # Get video statistics
+                video_request = youtube.videos().list(
+                    part='statistics,contentDetails',
+                    id=video_id
+                )
+                video_response = video_request.execute()
+                
+                if video_response.get('items'):
+                    stats = video_response['items'][0]['statistics']
+                    videos.append({
+                        'id': video_id,
+                        'title': snippet['title'],
+                        'description': snippet['description'],
+                        'view_count': int(stats.get('viewCount', 0)),
+                        'like_count': int(stats.get('likeCount', 0)),
+                        'published_at': snippet['publishedAt'][:10],
+                        'thumbnail': snippet['thumbnails']['high']['url'],
+                    })
+            
+            # Get next page
+            if 'nextPageToken' in response and len(videos) < max_videos:
+                request = youtube.playlistItems().list(
+                    part='snippet',
+                    playlistId=uploads_playlist_id,
+                    pageToken=response['nextPageToken'],
+                    maxResults=min(max_videos - len(videos), 50)
+                )
+            else:
+                request = None
+        
+        print(f"DEBUG: Fetched {len(videos)} videos")
+        return {
+            'success': True,
+            'videos': videos,
+            'count': len(videos)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"DEBUG: Exception in fetch_channel_videos: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to fetch channel: {str(e)}")

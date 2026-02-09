@@ -103,6 +103,19 @@ export const pythonYouTubeAPI = {
       };
     }
   },
+
+  // Commit Analysis endpoints
+  analyzeCommit: async (message: string) => {
+    return pythonAPI.post('/analyze/commit', { message });
+  },
+
+  analyzeCommitsBatch: async (commits: string[]) => {
+    return pythonAPI.post('/analyze/commits/batch', { commits });
+  },
+
+  analyzeSentiment: async (text: string) => {
+    return pythonAPI.post('/analyze/sentiment', { text });
+  },
 };
 
 export default pythonYouTubeAPI;
