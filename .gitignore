@@ -51,11 +51,11 @@ venv/
 *.h5
 *.pt
 *.pth
+*.pkl
 *.joblib
 *.onnx
 models/
 checkpoints/
-# Note: .pkl files are tracked with Git LFS
 
 # Data
 *.csv
