@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { authAPI } from '@/services/api'
 
 interface YouTubeChannelSetupProps {
@@ -12,7 +12,7 @@ export default function YouTubeChannelSetup({ currentChannel, onChannelUpdated }
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     if (!channelName.trim()) return
 
@@ -27,10 +27,10 @@ export default function YouTubeChannelSetup({ currentChannel, onChannelUpdated }
       if (response.success) {
         setMessage('✅ YouTube channel updated successfully!')
         onChannelUpdated(channelName.trim())
-        
+
         // Update localStorage with new user data
         localStorage.setItem('user', JSON.stringify(response.user))
-        
+
         // Refresh page to reload dashboard with new channel
         setTimeout(() => {
           window.location.reload()
@@ -38,8 +38,9 @@ export default function YouTubeChannelSetup({ currentChannel, onChannelUpdated }
       } else {
         setMessage('❌ Failed to update channel: ' + response.message)
       }
-    } catch (error: any) {
-      setMessage('❌ Error: ' + (error.response?.data?.message || error.message))
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message: string };
+      setMessage('❌ Error: ' + (err.response?.data?.message || err.message))
     } finally {
       setLoading(false)
     }
@@ -56,8 +57,8 @@ export default function YouTubeChannelSetup({ currentChannel, onChannelUpdated }
             {currentChannel ? 'Update YouTube Channel' : 'Connect Your YouTube Channel'}
           </h3>
           <p className="text-gray-600 text-sm">
-            {currentChannel 
-              ? `Current: ${currentChannel}` 
+            {currentChannel
+              ? `Current: ${currentChannel}`
               : 'Add your YouTube channel to see real analytics on your dashboard'
             }
           </p>
@@ -90,7 +91,7 @@ export default function YouTubeChannelSetup({ currentChannel, onChannelUpdated }
           >
             {loading ? 'Updating...' : currentChannel ? 'Update Channel' : 'Connect Channel'}
           </button>
-          
+
           {currentChannel && (
             <button
               type="button"
@@ -103,11 +104,10 @@ export default function YouTubeChannelSetup({ currentChannel, onChannelUpdated }
         </div>
 
         {message && (
-          <div className={`p-3 rounded-lg text-sm ${
-            message.includes('✅') 
-              ? 'bg-green-50 text-green-700 border border-green-200' 
-              : 'bg-red-50 text-red-700 border border-red-200'
-          }`}>
+          <div className={`p-3 rounded-lg text-sm ${message.includes('✅')
+            ? 'bg-green-50 text-green-700 border border-green-200'
+            : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
             {message}
           </div>
         )}

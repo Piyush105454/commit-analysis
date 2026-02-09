@@ -1,11 +1,10 @@
 'use client'
-import { useState } from 'react'
 import MobileMenu from './MobileMenu'
 
 interface NavigationProps {
   isMobileMenuOpen: boolean
   setIsMobileMenuOpen: (isOpen: boolean) => void
-  
+
 
 }
 
@@ -28,7 +27,7 @@ export default function Navigation(navProps: NavigationProps) {
             {/* Desktop Navigation */}
             <div className="hidden lg:block">
               <div className="ml-10 flex items-baseline space-x-8">
-              
+
               </div>
             </div>
 
@@ -60,9 +59,9 @@ export default function Navigation(navProps: NavigationProps) {
       </nav>
 
       {/* Mobile Menu */}
-      <MobileMenu 
-        isOpen={isMobileMenuOpen} 
-        onClose={() => setIsMobileMenuOpen(false)} 
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
     </>
   )

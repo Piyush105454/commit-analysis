@@ -59,7 +59,7 @@ const CommitAnalyzer: React.FC = () => {
       const response = await commitAPI.analyzeCommit(commitInput);
       setAnalysis({
         loading: false,
-        result: response.data || response,
+        result: (response.data || response) as CommitAnalysisResult,
         error: null,
         isBatch: false,
       });
@@ -92,7 +92,7 @@ const CommitAnalyzer: React.FC = () => {
       const response = await commitAPI.analyzeCommitsBatch(commits);
       setAnalysis({
         loading: false,
-        result: response.data || response,
+        result: (response.data || response) as BatchAnalysisResult,
         error: null,
         isBatch: true,
       });

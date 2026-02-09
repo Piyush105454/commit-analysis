@@ -1,41 +1,11 @@
 'use client'
 import { useState } from 'react'
 import Sidebar from './Sidebar'
-import StatsCards from './StatsCards'
-// import PerformanceChart from './PerformanceChart'
-// import RevenueChart from './RevenueChart'
-// import UserEngagement from './UserEngagement'
-// import RecentActivity from './RecentActivity'
-// import AIInsights from './AIInsights'
-// import YouTubeAnalyticsDashboard from './YouTubeAnalyticsDashboard'
-import { useUserChannel } from '@/hooks/useUserChannel'
-import {
-  ChannelPerformanceChart,
-  EngagementTrendChart,
-  ChannelGrowthChart
-} from '@/app/charts/YouTubeCharts'
 
-import YouTubeChannelSetup from '@/app/profile/YouTubeChannelSetup'
-
-// ✅ Props interfaces for reusability
-interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
-  onCollapseChange: (collapsedState: boolean) => void
-}
-
-interface DashboardLayoutProps {
-  // Props can be added here in the future
-  children?: React.ReactNode
-}
-
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default function DashboardPage() {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false)
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false)
-
-  // Get user's channel data automatically
-  const { user, channelAnalysis, loading: channelLoading, error: channelError, refreshChannelData } = useUserChannel()
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -132,117 +102,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
           </div>
-
-          {/* Stats Cards */}
-          {/* <div className="px-4 sm:px-6 mb-6 sm:mb-8">
-            <StatsCards />
-          </div> */}
-
-          {/* Charts
-          <div className="px-4 sm:px-6 grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6 sm:mb-8">
-            <PerformanceChart />
-            <RevenueChart />
-          </div>
- */}
-
-
-          {/* User's Channel Analytics */}
-          {/* <div className="px-4 sm:px-6 mb-6 sm:mb-8">
-            {channelLoading && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-                  <span className="text-gray-600">Loading your channel analytics...</span>
-                </div>
-              </div>
-            )}
-
-            {channelError && (
-              <YouTubeChannelSetup
-                currentChannel={user?.youtubeChannel}
-                onChannelUpdated={(channelName) => {
-                  console.log('Channel updated:', channelName)
-                  // The component will refresh the page
-                }}
-              />
-            )} */}
-
-            {/* {channelAnalysis && ( */}
-              {/* <div className="space-y-6"> */}
-                {/* Channel Header */}
-                {/* <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6 border border-red-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={channelAnalysis.channel_info.thumbnail}
-                        alt={channelAnalysis.channel_info.title}
-                        className="w-16 h-16 rounded-full border-2 border-red-200"
-                      />
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900">
-                          Your Channel: {channelAnalysis.channel_info.title}
-                        </h2>
-                        <p className="text-gray-600">
-                          Welcome back, {user.firstName}! Here's your latest analytics.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={refreshChannelData}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2"
-                    >
-                      <span>🔄</span>
-                      <span>Refresh</span>
-                    </button>
-                  </div>
-                </div> */}
-
-                {/* Channel Stats Cards */}
-                {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {channelAnalysis.analysis_summary.total_videos}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Videos</div>
-                    <div className="text-xs text-gray-500">
-                      {channelAnalysis.analysis_summary.videos_analyzed} analyzed
-                    </div>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                    <div className="text-2xl font-bold text-green-600">
-                      {(channelAnalysis.analysis_summary.total_views / 1000000).toFixed(1)}M
-                    </div>
-                    <div className="text-sm text-gray-600">Total Views</div>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {(channelAnalysis.analysis_summary.total_likes / 1000).toFixed(1)}K
-                    </div>
-                    <div className="text-sm text-gray-600">Total Likes</div>
-                  </div>
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                    <div className="text-2xl font-bold text-orange-600">
-                      {channelAnalysis.analysis_summary.avg_engagement_rate}%
-                    </div>
-                    <div className="text-sm text-gray-600">Engagement</div>
-                  </div>
-                </div> */}
-
-                {/* Channel Charts */}
-                {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  <ChannelPerformanceChart videos={channelAnalysis.all_videos} />
-                  <EngagementTrendChart videos={channelAnalysis.all_videos} />
-                </div>
-              </div>
-            )}
-          </div> */}
-
-          {/* Engagement, Activity, AI Insights */}
-          {/* <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6 sm:mb-8">
-            <UserEngagement />
-            <RecentActivity />
-            <AIInsights />
-          </div> */}
 
           {/* Platform Overview */}
           <div className="px-4 sm:px-6 pb-6">

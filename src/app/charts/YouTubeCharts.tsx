@@ -1,5 +1,4 @@
 'use client'
-import { useEffect, useRef } from 'react'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -28,8 +27,20 @@ ChartJS.register(
   Filler
 )
 
+// Video interface for charts
+export interface Video {
+  id: string
+  title: string
+  view_count?: number
+  like_count?: number
+  comment_count?: number
+  published_at?: string
+  engagement_ratio?: number
+  category_id?: string
+}
+
 // Channel Performance Chart
-export function ChannelPerformanceChart({ videos }: { videos: any[] }) {
+export function ChannelPerformanceChart({ videos }: { videos: Video[] }) {
   if (!videos || videos.length === 0) return null
 
   const topVideos = videos
@@ -71,9 +82,10 @@ export function ChannelPerformanceChart({ videos }: { videos: any[] }) {
       y: {
         beginAtZero: true,
         ticks: {
-          callback: function(value: any) {
-            if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M'
-            if (value >= 1000) return (value / 1000).toFixed(1) + 'K'
+          callback: function (value: string | number) {
+            const numValue = Number(value);
+            if (numValue >= 1000000) return (numValue / 1000000).toFixed(1) + 'M'
+            if (numValue >= 1000) return (numValue / 1000).toFixed(1) + 'K'
             return value
           }
         }
@@ -89,20 +101,20 @@ export function ChannelPerformanceChart({ videos }: { videos: any[] }) {
 }
 
 // Engagement Trend Chart
-export function EngagementTrendChart({ videos }: { videos: any[] }) {
+export function EngagementTrendChart({ videos }: { videos: Video[] }) {
   if (!videos || videos.length === 0) return null
 
   const sortedVideos = videos
     .filter(v => v.published_at)
-    .sort((a, b) => new Date(a.published_at).getTime() - new Date(b.published_at).getTime())
+    .sort((a, b) => new Date(a.published_at!).getTime() - new Date(b.published_at!).getTime())
     .slice(-20) // Last 20 videos
 
   const data = {
-    labels: sortedVideos.map(v => new Date(v.published_at).toLocaleDateString()),
+    labels: sortedVideos.map(v => new Date(v.published_at!).toLocaleDateString()),
     datasets: [
       {
         label: 'Engagement Rate (%)',
-        data: sortedVideos.map(v => ((v.engagement_ratio || 0) * 100).toFixed(2)),
+        data: sortedVideos.map(v => Number(((v.engagement_ratio || 0) * 100).toFixed(2))),
         borderColor: 'rgba(168, 85, 247, 1)',
         backgroundColor: 'rgba(168, 85, 247, 0.1)',
         fill: true,
@@ -168,7 +180,7 @@ export function EngagementTrendChart({ videos }: { videos: any[] }) {
 }
 
 // Sentiment Analysis Chart
-export function SentimentAnalysisChart({ sentimentData }: { 
+export function SentimentAnalysisChart({ sentimentData }: {
   sentimentData?: {
     counts?: {
       positive: number
@@ -195,7 +207,7 @@ export function SentimentAnalysisChart({ sentimentData }: {
 
   // Use percentages if available, otherwise use counts
   const dataToUse = sentimentData.percentages || sentimentData.counts || { positive: 0, negative: 0, neutral: 0 }
-  
+
   const data = {
     labels: ['Positive 😊', 'Neutral 😐', 'Negative 😞'],
     datasets: [
@@ -228,7 +240,7 @@ export function SentimentAnalysisChart({ sentimentData }: {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: { label: string; parsed: number; dataset: { data: number[] } }) {
             const label = context.label || ''
             const value = context.parsed
             // If we're using percentages, show as percentage, otherwise calculate percentage
@@ -253,13 +265,13 @@ export function SentimentAnalysisChart({ sentimentData }: {
 }
 
 // Video Categories Chart
-export function VideoCategoriesChart({ videos }: { videos: any[] }) {
+export function VideoCategoriesChart({ videos }: { videos: Video[] }) {
   if (!videos || videos.length === 0) return null
 
   // YouTube category mapping
   const categoryNames: { [key: string]: string } = {
     '1': 'Film & Animation',
-    '2': 'Autos & Vehicles', 
+    '2': 'Autos & Vehicles',
     '10': 'Music',
     '15': 'Pets & Animals',
     '17': 'Sports',
@@ -279,7 +291,7 @@ export function VideoCategoriesChart({ videos }: { videos: any[] }) {
   const categoryStats = videos.reduce((acc, video) => {
     const categoryId = video.category_id || 'Unknown'
     const categoryName = categoryNames[categoryId] || `Category ${categoryId}`
-    
+
     if (!acc[categoryName]) {
       acc[categoryName] = { count: 0, totalViews: 0, totalLikes: 0 }
     }
@@ -287,7 +299,7 @@ export function VideoCategoriesChart({ videos }: { videos: any[] }) {
     acc[categoryName].totalViews += video.view_count || 0
     acc[categoryName].totalLikes += video.like_count || 0
     return acc
-  }, {} as any)
+  }, {} as Record<string, { count: number; totalViews: number; totalLikes: number }>)
 
   const categories = Object.keys(categoryStats)
   const counts = categories.map(cat => categoryStats[cat].count)
@@ -332,7 +344,7 @@ export function VideoCategoriesChart({ videos }: { videos: any[] }) {
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: { label: string; parsed: number; dataset: { data: number[] } }) {
             const label = context.label || ''
             const value = context.parsed
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
@@ -352,7 +364,7 @@ export function VideoCategoriesChart({ videos }: { videos: any[] }) {
 }
 
 // Sentiment Over Time Chart
-export function SentimentOverTimeChart({ sentimentOverTime }: { 
+export function SentimentOverTimeChart({ sentimentOverTime }: {
   sentimentOverTime: Array<{
     date: string
     positive: number
@@ -424,34 +436,34 @@ export function SentimentOverTimeChart({ sentimentOverTime }: {
 }
 
 // Channel Growth Chart
-export function ChannelGrowthChart({ videos }: { videos: any[] }) {
+export function ChannelGrowthChart({ videos }: { videos: Video[] }) {
   if (!videos || videos.length === 0) return null
 
   const monthlyData = videos
     .filter(v => v.published_at)
     .reduce((acc, video) => {
-      const date = new Date(video.published_at)
+      const date = new Date(video.published_at!)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-      
+
       if (!acc[monthKey]) {
         acc[monthKey] = { videos: 0, views: 0, likes: 0 }
       }
-      
+
       acc[monthKey].videos++
       acc[monthKey].views += video.view_count || 0
       acc[monthKey].likes += video.like_count || 0
-      
+
       return acc
-    }, {} as any)
+    }, {} as Record<string, { videos: number; views: number; likes: number }>)
 
   const sortedMonths = Object.keys(monthlyData).sort()
-  
+
   const data = {
     labels: sortedMonths.map(month => {
       const [year, monthNum] = month.split('-')
-      return new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short' 
+      return new Date(parseInt(year), parseInt(monthNum) - 1).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short'
       })
     }),
     datasets: [
@@ -465,7 +477,7 @@ export function ChannelGrowthChart({ videos }: { videos: any[] }) {
       },
       {
         label: 'Total Views (M)',
-        data: sortedMonths.map(month => (monthlyData[month].views / 1000000).toFixed(1)),
+        data: sortedMonths.map(month => Number((monthlyData[month].views / 1000000).toFixed(1))),
         borderColor: 'rgba(34, 197, 94, 1)',
         backgroundColor: 'rgba(34, 197, 94, 0.1)',
         fill: false,

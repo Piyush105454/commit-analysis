@@ -52,18 +52,18 @@ const ChannelCommitAnalyzer: React.FC = () => {
   // Extract commits from video description
   const extractCommitsFromDescription = (description: string): string[] => {
     if (!description) return [];
-    
-    let commits: string[] = [];
-    
+
+    const commits: string[] = [];
+
     // Split by lines and process each line
     const lines = description.split('\n');
-    
+
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       // Skip empty lines and very short lines
       if (trimmed.length < 3) continue;
-      
+
       // Pattern 1: Conventional commits (feat:, fix:, etc.)
       if (/^(feat|fix|refactor|docs|test|chore|perf|style|build|ci|revert):\s*.+/i.test(trimmed)) {
         commits.push(trimmed);
@@ -96,10 +96,10 @@ const ChannelCommitAnalyzer: React.FC = () => {
 
     // Filter out empty strings and duplicates, minimum 5 chars
     const filtered = [...new Set(commits.filter(c => c.trim().length > 5))];
-    
+
     console.log('Extracted commits:', filtered);
     console.log('From description:', description.substring(0, 200));
-    
+
     return filtered;
   };
 
@@ -125,9 +125,9 @@ const ChannelCommitAnalyzer: React.FC = () => {
       }
 
       const data = await response.json();
-      
+
       // Transform backend response to Video format
-      const videos: Video[] = (data.videos || []).map((v: any) => ({
+      const videos: Video[] = (data.videos || []).map((v: { id?: string; video_id?: string; title: string; description?: string; view_count?: number; like_count?: number; published_at?: string; thumbnail?: string }) => ({
         id: v.id || v.video_id,
         title: v.title,
         description: v.description || '',
@@ -180,8 +180,8 @@ const ChannelCommitAnalyzer: React.FC = () => {
     try {
       const response = await commitAPI.analyzeCommitsBatch(state.commits);
       // Handle both direct response and axios response format
-      const responseData = (response as any).data || response;
-      const results = (responseData?.results || responseData) as CommitAnalysisResult[];
+      const responseData = (response as { data?: unknown }).data || response;
+      const results = ((responseData as Record<string, unknown>)?.results || responseData) as CommitAnalysisResult[];
 
       setState(prev => ({
         ...prev,
@@ -296,16 +296,19 @@ const ChannelCommitAnalyzer: React.FC = () => {
               <div
                 key={`${video.id}-${idx}`}
                 onClick={() => handleSelectVideo(video)}
-                className="cursor-pointer border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                className="cursor-pointer border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow relative"
               >
-                <img
-                  src={video.thumbnail || 'https://via.placeholder.com/320x180?text=Video'}
-                  alt={video.title}
-                  className="w-full h-40 object-cover bg-gray-200"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="320" height="180"%3E%3Crect fill="%23ddd" width="320" height="180"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
-                  }}
-                />
+                <div className="w-full h-40 relative bg-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={video.thumbnail || 'https://via.placeholder.com/320x180?text=Video'}
+                    alt={video.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="320" height="180"%3E%3Crect fill="%23ddd" width="320" height="180"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
+                    }}
+                  />
+                </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{video.title}</h3>
                   <div className="flex items-center justify-between text-xs text-gray-600">
@@ -408,11 +411,10 @@ const ChannelCommitAnalyzer: React.FC = () => {
                   <div className="flex items-start justify-between mb-2">
                     <p className="font-mono text-sm text-gray-900 flex-1">{result.message}</p>
                     <div className="flex gap-2 ml-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        result.sentiment.label === 'POSITIVE' ? 'bg-green-100 text-green-800' :
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${result.sentiment.label === 'POSITIVE' ? 'bg-green-100 text-green-800' :
                         result.sentiment.label === 'NEGATIVE' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                          'bg-gray-100 text-gray-800'
+                        }`}>
                         {result.sentiment.label}
                       </span>
                       <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -436,7 +438,7 @@ const ChannelCommitAnalyzer: React.FC = () => {
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
           <p className="text-yellow-800 font-semibold mb-2">⚠️ No Commits Found</p>
           <p className="text-yellow-700 text-sm">
-            The selected video description doesn't contain any commit messages.
+            The selected video description doesn&apos;t contain any commit messages.
             Try selecting another video or format commits as:
           </p>
           <div className="mt-3 text-left bg-white p-3 rounded border border-yellow-200 text-xs font-mono">

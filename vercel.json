@@ -1,0 +1,31 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "api/index.py",
+            "use": "@vercel/python"
+        },
+        {
+            "src": "package.json",
+            "use": "@vercel/next"
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/py/:path*",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/openapi.json",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/docs",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/redoc",
+            "destination": "/api/index.py"
+        }
+    ]
+}

@@ -27,13 +27,17 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
 app = FastAPI()
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
+    allow_origins=["*"], # Allow all for Vercel/Local mix
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create a router with the prefix used by Vercel rewrites
+router = APIRouter(prefix="/api/py")
 
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 VECTORIZER = None
@@ -61,11 +65,11 @@ def load_models():
 
 load_models()
 
-@app.get("/health")
+@router.get("/health")
 def health_check():
     return {"status": "ok"}
 
-@app.get("/youtube")
+@router.get("/youtube")
 def youtube_data(url: str = Query(..., description="YouTube video URL")):
     try:
         with YoutubeDL({'quiet': True, 'skip_download': True}) as ydl:
@@ -86,7 +90,7 @@ def youtube_data(url: str = Query(..., description="YouTube video URL")):
 def read_root():
     return {"message": "Hello from FastAPI backend!"}
 
-@app.get("/api/data")
+@router.get("/data")
 def get_data():
     return {"data": "This is coming from FastAPI"}
 
@@ -180,7 +184,7 @@ def predict_comments(comments: List[str]) -> Dict[str, Any]:
     }
 
 
-@app.post("/analyze/comments/batch")
+@router.post("/analyze/comments/batch")
 def analyze_comments_batch(payload: BatchCommentsRequest):
     try:
         if not payload.comments:
@@ -193,7 +197,7 @@ def analyze_comments_batch(payload: BatchCommentsRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/analyze/commit")
+@router.post("/analyze/commit")
 def analyze_single_commit(payload: CommitAnalysisRequest):
     try:
         result = analyze_commit(payload.message)
@@ -202,7 +206,7 @@ def analyze_single_commit(payload: CommitAnalysisRequest):
         raise HTTPException(status_code=500, detail=f"Commit analysis failed: {str(e)}")
 
 
-@app.post("/analyze/commits/batch")
+@router.post("/analyze/commits/batch")
 def analyze_commits_batch(payload: BatchCommitsRequest):
     try:
         if not payload.commits:
@@ -236,7 +240,7 @@ def analyze_commits_batch(payload: BatchCommitsRequest):
         raise HTTPException(status_code=500, detail=f"Batch analysis failed: {str(e)}")
 
 
-@app.post("/analyze/sentiment")
+@router.post("/analyze/sentiment")
 def analyze_text_sentiment(payload: TextRequest):
     try:
         result = analyze_sentiment(payload.text)
@@ -245,7 +249,7 @@ def analyze_text_sentiment(payload: TextRequest):
         raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {str(e)}")
 
 
-@app.post("/analyze/video")
+@router.post("/analyze/video")
 def analyze_video(payload: AnalyzeVideoRequest):
     try:
         with YoutubeDL({'quiet': True, 'skip_download': True}) as ydl:
@@ -308,16 +312,7 @@ def analyze_video(payload: AnalyzeVideoRequest):
     return result
 
 
-@app.post("/analyze/sentiment")
-def analyze_text_sentiment(payload: TextRequest):
-    try:
-        result = analyze_sentiment(payload.text)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {str(e)}")
-
-
-@app.post("/youtube/channel")
+@router.post("/youtube/channel")
 def fetch_channel_videos(payload: ChannelRequest):
     """Fetch REAL videos from YouTube channel using YouTube Data API"""
     try:
@@ -435,3 +430,5 @@ def fetch_channel_videos(payload: ChannelRequest):
     except Exception as e:
         print(f"DEBUG: Exception in fetch_channel_videos: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Failed to fetch channel: {str(e)}")
+
+app.include_router(router)

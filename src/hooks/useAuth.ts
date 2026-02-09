@@ -31,11 +31,12 @@ export const useAuth = () => {
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Auth check error:', err);
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
-        setError(err.message);
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

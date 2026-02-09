@@ -1,56 +1,45 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-interface AnimatedChartProps {
-  currentView?: number
- 
-  
-  currentBars?: number[]
-  currentLabels?: string[]
-  currentColors?: string[]
- 
-  showGrowth?: boolean
-}
+const views = [
+  {
+    title: "Growth Metrics",
+    data: { followers: 12500, growth: 8.5, engagement: 4.2 },
+    bars: [65, 78, 82, 75, 88, 92],
+    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  },
+  {
+    title: "Engagement Rate",
+    data: { likes: 2400, comments: 340, shares: 180 },
+    bars: [45, 62, 58, 71, 66, 79],
+    labels: ['Reels', 'Posts', 'Stories', 'IGTV', 'Live', 'Guides']
+  },
+  {
+    title: "Reach & Impressions",
+    data: { reach: 45600, impressions: 89200, peak: '2PM' },
+    bars: [72, 85, 91, 68, 76, 83],
+    labels: ['12PM', '1PM', '2PM', '3PM', '4PM', '5PM']
+  },
+  {
+    title: "Content Performance",
+    data: { video: 68, image: 24, text: 8 },
+    bars: [68, 24, 8, 45, 62, 38],
+    labels: ['Video', 'Image', 'Text', 'Carousel', 'Story', 'Reel']
+  },
+  {
+    title: "Audience Insights",
+    data: { age: '25-34', gender: '60% F', location: 'NYC' },
+    bars: [42, 68, 35, 28, 15, 22],
+    labels: ['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+  }
+]
 
-export default function AnimatedChart(props: AnimatedChartProps) {
+const colors = ['#1DA1F2', '#E1306C', '#0077B5', '#25D366', '#FF0000', '#7B68EE']
+
+export default function AnimatedChart() {
   const [currentView, setCurrentView] = useState(0)
   const [showGrowth, setShowGrowth] = useState(true)
   const [animatedValues, setAnimatedValues] = useState<Record<string, number>>({})
-
-  const views = [
-    {
-      title: "Growth Metrics",
-      data: { followers: 12500, growth: 8.5, engagement: 4.2 },
-      bars: [65, 78, 82, 75, 88, 92],
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    },
-    {
-      title: "Engagement Rate",
-      data: { likes: 2400, comments: 340, shares: 180 },
-      bars: [45, 62, 58, 71, 66, 79],
-      labels: ['Reels', 'Posts', 'Stories', 'IGTV', 'Live', 'Guides']
-    },
-    {
-      title: "Reach & Impressions",
-      data: { reach: 45600, impressions: 89200, peak: '2PM' },
-      bars: [72, 85, 91, 68, 76, 83],
-      labels: ['12PM', '1PM', '2PM', '3PM', '4PM', '5PM']
-    },
-    {
-      title: "Content Performance",
-      data: { video: 68, image: 24, text: 8 },
-      bars: [68, 24, 8, 45, 62, 38],
-      labels: ['Video', 'Image', 'Text', 'Carousel', 'Story', 'Reel']
-    },
-    {
-      title: "Audience Insights",
-      data: { age: '25-34', gender: '60% F', location: 'NYC' },
-      bars: [42, 68, 35, 28, 15, 22],
-      labels: ['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
-    }
-  ]
-
-  const colors = ['#1DA1F2', '#E1306C', '#0077B5', '#25D366', '#FF0000', '#7B68EE']
 
   // Auto switch view
   useEffect(() => {
@@ -105,9 +94,8 @@ export default function AnimatedChart(props: AnimatedChartProps) {
             {views.map((_, index) => (
               <div
                 key={index}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                  index === currentView ? 'bg-blue-500 scale-125' : 'bg-gray-300'
-                }`}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${index === currentView ? 'bg-blue-500 scale-125' : 'bg-gray-300'
+                  }`}
               />
             ))}
           </div>
@@ -216,7 +204,7 @@ export default function AnimatedChart(props: AnimatedChartProps) {
         <div className="w-2 h-2 bg-sky-400 rounded-full animate-pulse animation-delay-500" title="Twitter"></div>
       </div>
 
-     
+
       {/* Progress Line */}
       <div className="absolute top-0 left-0 w-full h-0.5 bg-gray-200 rounded-full overflow-hidden">
         <div
